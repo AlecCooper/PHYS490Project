@@ -1,0 +1,7 @@
+{
+	"learning rate": 0.001,
+	"batch size": 100,
+	"num epoch": 10000,
+	"display epoch": 100,
+	"test size": 100
+}
