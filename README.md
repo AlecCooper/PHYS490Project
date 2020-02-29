@@ -8,5 +8,6 @@ python main.py
 
 Currently calculates Hamiltonian for a test state with both a nearest-neighbor and a plaquette term.
 
-Generates given number of states through local update. Takes a starting temperature to calculate thermodynamic beta and probabilities.
+Step 1: Generates given number of states through local update. Takes a starting temperature to calculate thermodynamic beta and probabilities.
 
+Step 2: Performs a linear regression to learn E0 and J1 in the effective Hamiltonian. Plots states from the original Hamiltonian and the linear fit.
