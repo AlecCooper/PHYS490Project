@@ -70,11 +70,11 @@ def calc_mag(T):
     state_chain[700:]
     mags=[]
     for s in state_chain:
-        mags.append(np.sum(s))
+        mags.append(abs(np.sum(s)) / (size**2))
     
-    return np.mean(mags) / (size*size)
+    return np.mean(mags)
 
-betas = np.arange(0., 2., 0.1)
+betas = np.arange(0., 1.5, 0.1)
 Ts = betas/k_b
 
 mags = []
@@ -90,5 +90,5 @@ print(T_c)
 
 plt.xlabel(r'$T$', fontsize=16)
 plt.ylabel(r'$M$', fontsize=16)
-plt.show()
+plt.savefig('magnetization')
 
