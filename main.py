@@ -3,7 +3,8 @@
 #import modules
 import numpy as np
 import matplotlib.pyplot as plt
-
+from localupdate import LocalUpdater
+import time
 
 #global variables (temporary)
 J_factor = 1. #nearest-neighbor term factor
@@ -80,6 +81,7 @@ if KLplot:
 
         
 #STEP 1: generate states with local update
+local = LocalUpdater(hamiltonian, beta)
 
 initial_state = np.random.randint(0, 2, (size,size)) #initialize state from 0 to 1
 initial_state[initial_state==0] = -1 #replace 0s with -1s
@@ -95,29 +97,11 @@ C_alphas.append(spin_correlation(initial_state))
 
 kls = []
 
+start_time = time.time()
 for n in range(chain_length):
     state = np.copy(state_chain[n])
-    energy = hamiltonian(state)
-    
-    #loop over sites in state to perform local update    
-    for i in range(size):
-        for j in range(size):
-            accept = False #whether or not flip is accepted
-            state[i,j] *= (-1) #try flipping bit
-            flipped_energy = hamiltonian(state) #energy of flipped state
-            
-            if flipped_energy < energy: #accept if lower energy
-                accept = True
-            else: #if higher energy
-                p_rand = np.random.uniform(0, 1)
-                prob_accept = np.exp(-1*beta*(flipped_energy-energy)) #probability of accepting
-                if p_rand < prob_accept: #accept if lower than probability
-                    accept = True
-            
-            if accept==True: #if flip is rejected
-                energy = flipped_energy #update energy
-            else: #if rejected
-                state[i,j] *= (-1) #flip bit back
+
+    state = local.update(state)
             
     #add state to chain
     state_chain.append(state)
@@ -137,6 +121,8 @@ for n in range(chain_length):
         #calculate KL distance
         kl = KLdistance(prob_gen, p_lambdas)
         kls.append(kl)
+
+print(time.time()-start_time)
 
 
 if KLplot:
