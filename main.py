@@ -9,42 +9,55 @@ import time
 #global variables (temporary)
 J_factor = 1. #nearest-neighbor term factor
 K_factor = 0.2 #plaquette term factor
-size = 3 #size of state in 1D
+size = 5 #size of state in 1D
 chain_length = 1000 #number of states to generate
 T_start = 1000. #starting temperature
 KLplot = True #whether or not to calculate and plot KL distance
 if size>4: #do not calculate KL distance if larger than 4x4
-    KLplot = True
+    KLplot = False
+
+#use these if grid larger than 5
 
 #calculate spin correlation
 def spin_correlation(state):
-    state_x = len(state[:,0])
-    state_y = len(state[0,:])
+    horiz_shift = np.insert(state[:,1:], len(state[0,:])-1, state[:,0], axis=1) #horizonatally shifted state
+    vert_shift = np.insert(state[1:], len(state[:,0])-1, state[0], axis=0) #vertically shifted state
     
-    #nearest-neighbor term
-    e_neighbor = 0 #initialize
-    for i in range(state_x):
-        for j in range(state_y):
-            e_neighbor += state[i,j] * state[i, (j+1) % state_y] #horizontal term
-            e_neighbor += state[i,j] * state[(i+1) % state_x, j] #vertical term
-
-    return e_neighbor
+    return np.sum( state*horiz_shift + state*vert_shift )
 
 #original hamiltonian
-def hamiltonian(state):
-    #nearest-neighbor term
-    e_neighbor = spin_correlation(state)
+def hamiltonian(state, i_ind=None, j_ind=None):            
+    if i_ind==None and j_ind==None: #if no indices specified
+        #generate shifted matrices
+        horiz_shift = np.insert(state[:,1:], len(state[0,:])-1, state[:,0], axis=1)
+        vert_shift = np.insert(state[1:], len(state[:,0])-1, state[0], axis=0)
+        diag_shift = np.insert(horiz_shift[1:], len(horiz_shift[:,0])-1, horiz_shift[0], axis=0)
+        
+        #nearest-neighbor term
+        e_neighbor = np.sum( state*horiz_shift + state*vert_shift )
+        
+        #plaquette term
+        e_plaquette = np.sum( state*horiz_shift*vert_shift*diag_shift )
+
+    else: #for a single index
+        state_x = len(state[:,0])
+        state_y = len(state[0,:])
     
-    #plaquette term
-    state_x = len(state[:,0])
-    state_y = len(state[0,:])
-    e_plaquette = 0 #initialize
-    for i in range(state_x):
-        for j in range(state_y):
-            plaquette = state[i,j] * state[i, (j+1) % state_y]
-            plaquette *= state[(i+1) % state_x, j] * state[(i+1) % state_x, (j+1) % state_y]
-            e_plaquette += plaquette
-    
+        #nearest-neighbor term
+        e_neighbor = 0 #initialize
+        for i in [i_ind-1, i_ind]:
+            for j in [j_ind-1, j_ind]:
+                e_neighbor += state[i,j] * state[i, (j+1) % state_y] #horizontal term
+                e_neighbor += state[i,j] * state[(i+1) % state_x, j] #vertical term
+        
+        #plaquette term
+        e_plaquette = 0 #initialize
+        for i in [i_ind-1, i_ind]:
+            for j in [j_ind-1, j_ind]:
+                plaquette = state[i,j] * state[i, (j+1) % state_y]
+                plaquette *= state[(i+1) % state_x, j] * state[(i+1) % state_x, (j+1) % state_y]
+                e_plaquette += plaquette
+
     return -J_factor*e_neighbor - K_factor*e_plaquette
 
 #effective hamiltonian
@@ -133,14 +146,13 @@ if KLplot:
     plt.title('KL distance '+str(size)+'x'+str(size)+' grid', fontsize=16)
     plt.savefig('KLdistance'+str(size)+'x'+str(size))
     
+
+
+'''
 #convert to np arrays
 E_alphas = np.reshape(np.array(E_alphas) , (len(E_alphas),1))
 C_alphas = np.reshape(np.array(C_alphas) , (len(C_alphas),1))
 
-
-
-
-'''
 #STEP 2: learn effective hamiltionian
 
 #perform linear regression to learn effective hamiltonian
