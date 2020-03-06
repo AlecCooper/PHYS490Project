@@ -25,8 +25,8 @@ def spin_correlation(state):
     e_neighbor = 0 #initialize
     for i in range(state_x):
         for j in range(state_y):
-            e_neighbor += J_factor * state[i,j] * state[i, (j+1) % state_y] #horizontal term
-            e_neighbor += J_factor * state[i,j] * state[(i+1) % state_x, j] #vertical term
+            e_neighbor += state[i,j] * state[i, (j+1) % state_y] #horizontal term
+            e_neighbor += state[i,j] * state[(i+1) % state_x, j] #vertical term
 
     return e_neighbor
 
@@ -101,6 +101,7 @@ start_time = time.time()
 for n in range(chain_length):
     state = np.copy(state_chain[n])
 
+    #perform local update
     state = local.update(state)
             
     #add state to chain
