@@ -3,20 +3,20 @@
 #import modules
 import numpy as np
 import matplotlib.pyplot as plt
-from localupdate import LocalUpdater
 import time
+from localupdate import LocalUpdater
+from wolffupdate import WolffUpdater
+
 
 #global variables (temporary)
 J_factor = 1. #nearest-neighbor term factor
 K_factor = 0.2 #plaquette term factor
-size = 5 #size of state in 1D
+size = 3 #size of state in 1D
 chain_length = 1000 #number of states to generate
-T_start = 1000. #starting temperature
+T_start = 5000. #starting temperature
 KLplot = True #whether or not to calculate and plot KL distance
 if size>4: #do not calculate KL distance if larger than 4x4
     KLplot = False
-
-#use these if grid larger than 5
 
 #calculate spin correlation
 def spin_correlation(state):
@@ -72,7 +72,7 @@ def KLdistance(prob1, prob2):
 
 #calculate thermodynamic beta
 k_b = 8.617e-5 #Boltzmann constant in eV/K
-beta = k_b * T_start
+beta = 1/(k_b * T_start)
 
 
 #generate all possible states to compute KL distance
@@ -138,14 +138,44 @@ for n in range(chain_length):
 
 print(time.time()-start_time)
 
+#perform wolff update
+wolff = WolffUpdater(J_factor, beta)
+wolff_chain = []
+wolff_chain.append(initial_state)
+wolff_kls=[]
+
+start_time = time.time()
+for n in range(chain_length):
+    state = np.copy(wolff_chain[n])
+    
+    state = wolff.update(state)
+    wolff_chain.append(state)
+
+    #calculate KL distance
+    if KLplot:
+        #probability of generated states
+        gen_states, gen_freq = np.unique(wolff_chain, return_counts=True, axis=0) #unique states in chain
+        prob_gen = gen_freq.astype('float') / np.sum(gen_freq)
+        
+        #model probabilities        
+        e_lambdas = [np.exp(-beta*hamiltonian(s)) for s in gen_states]
+        p_lambdas = e_lambdas / z_lambda
+       
+        #calculate KL distance
+        kl = KLdistance(prob_gen, p_lambdas)
+        wolff_kls.append(kl)
+        
+print(time.time()-start_time)
+        
 
 if KLplot:
     plt.plot(np.arange(len(kls)), kls, 'k')
+    plt.plot(np.arange(len(wolff_kls)), wolff_kls, 'g')
     plt.xlabel('number of states', fontsize=16)
     plt.ylabel('KL distance', fontsize=16)
     plt.title('KL distance '+str(size)+'x'+str(size)+' grid', fontsize=16)
     plt.savefig('KLdistance'+str(size)+'x'+str(size))
-    
+
 
 
 '''
