@@ -75,23 +75,46 @@ def calc_mag(T):
         #add state to chain
         state_chain.append(state)
     
+    mags=[]
+    for i in range(len(state_chain)):
+        mags.append(np.sum(state_chain[i]))
+    
+    mag_product=[]
+    mag_autocorr=[]
+    for i in range(len(state_chain)-1):
+        mag_product.append(mags[i]*mags[i+1])
+        
+        mag_product_exp = abs(np.mean(mag_product))
+        mag_exp = abs(np.mean(mags[:i]))
+        mag_autocorr.append(mag_product_exp - mag_exp**2)
+        
+    mag = abs(np.mean(mags)) #magnetization
+    moment =  mag / (size**2) #magnetic moment
+ 
+    return moment, mag_autocorr
+    
+    '''
     #calculate magnetization
     counter = 0
     mags = np.zeros( shape=(chain_length+1,1) ) #[], changed to np to use * in the mags_autocorr calculation later 
     for s in state_chain: 
-        mags[counter] =  abs(np.sum(s)) / (size**2)  # of size 1001 at end 
+        mags[counter] = np.sum(s)
         counter = counter + 1
         
     mags_autocorr = np.zeros( shape=(chain_length+1,1) )
-    for dt in range(0,chain_length+1): 
-        mags_autocorr[dt] = np.sum( mags[0:(chain_length+1-dt)]*mags[(0+dt):chain_length+1] ) / (chain_length+1-dt)
+    for dt in range(0,chain_length+1):
+        mags_autocorr[dt] = mags[dt]*mags[dt+1]
+        #mags_autocorr[dt] = np.sum( mags[0:(chain_length+1-dt)]*mags[(0+dt):chain_length+1] ) / (chain_length+1-dt)
+    
         
     state_chain=state_chain[700:]
     mags = mags[700:]
     
+    mag = abs(np.mean(mags)) #magnetization
+    moment =  mag / (size**2) #magnetic moment
 
-    return np.mean(mags), mags_autocorr # avg mags over later time steps, and autocorrelation is over all time steps 
-    
+    return moment, mags_autocorr # avg mags over later time steps, and autocorrelation is over all time steps 
+    '''
     
     
 Ts = np.arange(5000, 55000, 5000)
@@ -99,10 +122,10 @@ Ts = np.arange(5000, 55000, 5000)
 
 size = 10 #size of state in 1D
 mags = []
-for T in Ts:
-    mean_mag, mags_autocorr = calc_mag(T)
-    mags.append(mean_mag)
-    plt.plot(mags_autocorr - mean_mag**2)
+
+T = 10000
+moment, mags_autocorr = calc_mag(T)
+plt.plot(range(len(mags_autocorr)), mags_autocorr, 'ko')
 #p1,=plt.plot(Ts, mags, 'ko')
 plt.xlabel(r'$dt$', fontsize=16)
 plt.ylabel(r'$M(t)M(t+dt) - M^2$', fontsize=16)
@@ -114,29 +137,22 @@ mags = []
 for T in Ts:
     mags.append(calc_mag(T))
 p2,=plt.plot(Ts, mags, 'go')
-
 size = 8 #size of state in 1D
 mags = []
 for T in Ts:
     mags.append(calc_mag(T))
 p3,=plt.plot(Ts, mags, 'bo')
-
 plt.legend([p1,p2,p3],['3x3','5x5','8x8'])
-
 size = 3 #size of state in 1D
 start_time = time.time()
 mean_mag, mags_autocorr = calc_mag(Ts[0]) 
 mean_mag2 = mean_mag**2
-
-
 mags = []
 for T in Ts:
     mags.append(calc_mag(T))
 p3,=plt.plot(Ts, mags, 'bo')
-
 T_c = (2/np.log(1+np.sqrt(2))) * (J_factor/k_b)
 print(T_c)
-
 #plot magnetization function
 step = (Ts[-1] - Ts[0])/100
 plot_t = np.arange(Ts[0], Ts[-1]+step, step)
@@ -147,11 +163,8 @@ for t in plot_t:
     else:
         mag_plot.append(0)
 plt.plot(plot_t, mag_plot, 'm')
-
 plt.plot([T_c, T_c], [0,1], 'r--')
-
 plt.xlabel(r'$T$', fontsize=16)
 plt.ylabel(r'$m$', fontsize=16)
 plt.savefig('magnetization')
-
 '''
