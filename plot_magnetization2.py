@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from localupdate import LocalUpdater
 from mpmath import csch
 import time
+from scipy.optimize import curve_fit
+
 
 #global variables (temporary)
 J_factor = 1. #nearest-neighbor term factor
