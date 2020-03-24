@@ -5,18 +5,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from localupdate import LocalUpdater
-from mpmath import csch
+from wolffupdate import WolffUpdater
+
 
 #global variables (temporary)
-J_factor = 1. #nearest-neighbor term factor
-K_factor = 0.2 #plaquette term factor
-size = 3 #size of state in 1D
-chain_length = 1000 #number of states to generate
+J_factor = 1.0e-4 #nearest-neighbor term factor
+K_factor = 0.2e-4 #plaquette term factor
+size = 5 #size of state in 1D
+chain_length = 2000 #number of states to generate
 k_b = 8.617e-5 #Boltzmann constant in eV/K
-
-def mag_function(T):
-    c = csch(2*J_factor / (k_b*T))
-    return (1-c**2)**(1./8.)
 
 #original hamiltonian
 def hamiltonian(state, i_ind=None, j_ind=None):            
@@ -58,6 +55,7 @@ def calc_mag(T):
     beta = 1/(k_b * T) #thermodynamic beta
 
     local = LocalUpdater(hamiltonian, beta)
+    #local = WolffUpdater(J_factor, beta)
 
     initial_state = np.random.randint(0, 2, (size,size)) #initialize state from 0 to 1
     initial_state[initial_state==0] = -1 #replace 0s with -1s
@@ -75,55 +73,49 @@ def calc_mag(T):
         state_chain.append(state)
     
     #calculate magnetization
-    state_chain=state_chain[700:]
+    state_chain=state_chain[1500:]
+
 
     mags=[]
     for s in state_chain:
-        mags.append(abs(np.sum(s)) / (size**2))
+        mags.append(abs(np.sum(s)) / float(size**2))
+    
+    print(size, T)
     
     return np.mean(mags)
     
     
-    
-Ts = np.arange(5000, 55000, 5000)
+Ts = np.arange(15000, 34000, 1000)
 
-
-size = 3 #size of state in 1D
-mags = []
-for T in Ts:
-    mags.append(calc_mag(T))
-p1,=plt.plot(Ts, mags, 'ko')
+Ts = np.arange(0.5,9.,0.5)
 
 size = 5 #size of state in 1D
 mags = []
 for T in Ts:
     mags.append(calc_mag(T))
+p1,=plt.plot(Ts, mags, 'ko')
+'''
+size = 10 #size of state in 1D
+mags = []
+for T in Ts:
+    mags.append(calc_mag(T))
 p2,=plt.plot(Ts, mags, 'go')
 
-size = 8 #size of state in 1D
+size = 15 #size of state in 1D
 mags = []
 for T in Ts:
     mags.append(calc_mag(T))
 p3,=plt.plot(Ts, mags, 'bo')
 
-plt.legend([p1,p2,p3],['3x3','5x5','8x8'])
+plt.legend([p1,p2,p3],['5x5','10x10','15x15'])
+'''
 
 
 T_c = (2/np.log(1+np.sqrt(2))) * (J_factor/k_b)
 print(T_c)
 
-#plot magnetization function
-step = (Ts[-1] - Ts[0])/100
-plot_t = np.arange(Ts[0], Ts[-1]+step, step)
-mag_plot=[]
-for t in plot_t:
-    if t<T_c:
-        mag_plot.append(mag_function(t))
-    else:
-        mag_plot.append(0)
-plt.plot(plot_t, mag_plot, 'm')
-
 plt.plot([T_c, T_c], [0,1], 'r--')
+
 
 plt.xlabel(r'$T$', fontsize=16)
 plt.ylabel(r'$m$', fontsize=16)

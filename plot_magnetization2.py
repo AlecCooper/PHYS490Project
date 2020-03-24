@@ -75,23 +75,21 @@ def calc_mag(T):
         #add state to chain
         state_chain.append(state)
     
-    mags=[]
+    mags=[] #list of magnetizations
     for i in range(len(state_chain)):
-        mags.append(np.sum(state_chain[i]))
+        mags.append(abs(np.sum(state_chain[i])) / float(size**2))
+    mag = abs(np.mean(mags)) #magnetization
     
-    mag_product=[]
-    mag_autocorr=[]
+    mag_product=[] #product of current and next magnetization
+    mag_autocorr=[] #autocorrelation function
     for i in range(len(state_chain)-1):
         mag_product.append(mags[i]*mags[i+1])
         
-        mag_product_exp = abs(np.mean(mag_product))
-        mag_exp = abs(np.mean(mags[:i]))
+        mag_product_exp = np.mean(mag_product)
+        mag_exp = np.mean(mags[:i])
         mag_autocorr.append(mag_product_exp - mag_exp**2)
-        
-    mag = abs(np.mean(mags)) #magnetization
-    moment =  mag / (size**2) #magnetic moment
  
-    return moment, mag_autocorr
+    return mag, mag_autocorr
     
     '''
     #calculate magnetization
