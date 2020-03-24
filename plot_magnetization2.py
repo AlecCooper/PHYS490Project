@@ -129,6 +129,24 @@ plt.xlabel(r'$dt$', fontsize=16)
 plt.ylabel(r'$M(t)M(t+dt) - M^2$', fontsize=16)
 plt.savefig('Fig3ofPaper_local')
 
+# fitting the autocorrelation function to an exponential function
+def func(x, a, b, c):
+     return a * np.exp(-b * x) +c
+ 
+mags_autocorr[0] = 0 # this had nan as the first value so I just set it to zero  
+ind_max = np.argmax(mags_autocorr)   #find index of maximum value in mags_autocorr 
+ydata = mags_autocorr[ind_max:]
+xdata = np.linspace(0, len(ydata)-1, len(ydata)) 
+popt, pcov = curve_fit(func, xdata, ydata) # perform curve fitting using scipy's non-linear least squares 
+
+# plot of the fitted function and original data 
+p1, = plt.plot(xdata, func(xdata, popt[0],popt[1],popt[2])) 
+p2, = plt.plot(xdata, ydata)
+plt.legend([p1,p2],['fit','original'])
+
+# this is the autocorrelation time 
+tau = 1/popt[1] 
+print(tau)
 '''
 size = 5 #size of state in 1D
 mags = []
