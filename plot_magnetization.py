@@ -94,7 +94,7 @@ mags = []
 for T in Ts:
     mags.append(calc_mag(T))
 p1,=plt.plot(Ts, mags, 'ko')
-'''
+
 size = 10 #size of state in 1D
 mags = []
 for T in Ts:
@@ -108,7 +108,7 @@ for T in Ts:
 p3,=plt.plot(Ts, mags, 'bo')
 
 plt.legend([p1,p2,p3],['5x5','10x10','15x15'])
-'''
+
 
 
 T_c = (2/np.log(1+np.sqrt(2))) * (J_factor/k_b)
