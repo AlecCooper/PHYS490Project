@@ -6,7 +6,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from localupdate import LocalUpdater
 from wolffupdate import WolffUpdater
+from scipy.optimize import curve_fit
 
+#function to fit to magnetization
+def mag_function(x,a,b,c,e):
+    less_func = lambda x: a*np.power(-x + b, 1./e) + c
+    more_func = lambda x: -a*np.power((x - b), 1./e) + c
+    y = np.piecewise(x, [x==b, x<b, x>b], [c, less_func, more_func])
+    return y
 
 #global variables (temporary)
 J_factor = 1.0e-4 #nearest-neighbor term factor
@@ -75,46 +82,64 @@ def calc_mag(T):
     #calculate magnetization
     state_chain=state_chain[1500:]
 
-
     mags=[]
     for s in state_chain:
         mags.append(abs(np.sum(s)) / float(size**2))
     
-    print(size, T)
-    
     return np.mean(mags)
     
-    
-Ts = np.arange(15000, 34000, 1000)
 
 Ts = np.arange(0.5,9.,0.5)
+step = (Ts[-1] - Ts[0]) / 100
+T_plot = np.arange(Ts[0], Ts[-1]+step, step)
 
-size = 5 #size of state in 1D
-mags = []
-for T in Ts:
-    mags.append(calc_mag(T))
-p1,=plt.plot(Ts, mags, 'ko')
+sizes=[5,10,15]
+colors=['k','g','b']
+ps=[]
+labels=[]
+last_y = np.zeros(len(T_plot))
+T_intersect = []
+y_intersect = []
+for i in range(len(sizes)):
+    size = sizes[i]
+    
+    #plot data points
+    mags=[]
+    for T in Ts:
+        mags.append(calc_mag(T))
+        print(size, T)
+    p1,=plt.plot(Ts, mags, colors[i]+'o')
+    ps.append(p1)
+    labels.append(str(size)+'x'+str(size))
 
-size = 10 #size of state in 1D
-mags = []
-for T in Ts:
-    mags.append(calc_mag(T))
-p2,=plt.plot(Ts, mags, 'go')
+    #perform fit
+    par, cov = curve_fit(mag_function, Ts[1:], mags[1:], p0=[1., 2.5, 0.5, 4.])
+    print(par)
+    
+    ys = mag_function(T_plot, par[0],par[1],par[2],par[3])
+    plt.plot(T_plot, ys, colors[i])
 
-size = 15 #size of state in 1D
-mags = []
-for T in Ts:
-    mags.append(calc_mag(T))
-p3,=plt.plot(Ts, mags, 'bo')
+    #find intersection
+    if np.sum(last_y) != 0:
+        idx = np.argwhere(np.diff(np.sign(last_y - ys))).flatten()
+        T_intersect.extend(T_plot[idx])
+        y_intersect.extend(ys[idx])
+        
+    last_y = ys
 
-plt.legend([p1,p2,p3],['5x5','10x10','15x15'])
+#plot critical temperature
+print(T_intersect)
+plt.plot(T_intersect[0], y_intersect[0], 'ro')
+ax = plt.gca()
+plt.text(0.05,0.05,r'$T_c: $'+'{0:.2f}'.format(T_intersect[0]),fontsize=16,ha='left',va='bottom',transform=ax.transAxes)
 
-
+#plot legend
+if len(sizes) > 1:
+    plt.legend(ps, labels)
 
 T_c = (2/np.log(1+np.sqrt(2))) * (J_factor/k_b)
 print(T_c)
-
-plt.plot([T_c, T_c], [0,1], 'r--')
+#plt.plot([T_c, T_c], [0,1], 'r--')
 
 
 plt.xlabel(r'$T$', fontsize=16)
