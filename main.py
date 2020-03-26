@@ -6,14 +6,14 @@ import matplotlib.pyplot as plt
 import time
 from localupdate import LocalUpdater
 from wolffupdate import WolffUpdater
-
+from slmc import SLMCUpdater
 
 #global variables (temporary)
-J_factor = 1. #nearest-neighbor term factor
-K_factor = 0.2 #plaquette term factor
-size = 3 #size of state in 1D
+J_factor = 1.0e-4 #nearest-neighbor term factor
+K_factor = 0.2e-4 #plaquette term factor
+size = 10 #size of state in 1D
 chain_length = 1000 #number of states to generate
-T_start = 5000. #starting temperature
+T_start = 5. #starting temperature
 KLplot = True #whether or not to calculate and plot KL distance
 if size>4: #do not calculate KL distance if larger than 4x4
     KLplot = False
@@ -95,6 +95,7 @@ if KLplot:
         
 #STEP 1: generate states with local update
 local = LocalUpdater(hamiltonian, beta)
+wolff = WolffUpdater(J_factor, beta)
 
 initial_state = np.random.randint(0, 2, (size,size)) #initialize state from 0 to 1
 initial_state[initial_state==0] = -1 #replace 0s with -1s
@@ -138,50 +139,20 @@ for n in range(chain_length):
 
 print(time.time()-start_time)
 
-#perform wolff update
-wolff = WolffUpdater(J_factor, beta)
-wolff_chain = []
-wolff_chain.append(initial_state)
-wolff_kls=[]
-
-start_time = time.time()
-for n in range(chain_length):
-    state = np.copy(wolff_chain[n])
-    
-    state = wolff.update(state)
-    wolff_chain.append(state)
-
-    #calculate KL distance
-    if KLplot:
-        #probability of generated states
-        gen_states, gen_freq = np.unique(wolff_chain, return_counts=True, axis=0) #unique states in chain
-        prob_gen = gen_freq.astype('float') / np.sum(gen_freq)
-        
-        #model probabilities        
-        e_lambdas = [np.exp(-beta*hamiltonian(s)) for s in gen_states]
-        p_lambdas = e_lambdas / z_lambda
-       
-        #calculate KL distance
-        kl = KLdistance(prob_gen, p_lambdas)
-        wolff_kls.append(kl)
-        
-print(time.time()-start_time)
-        
-
 if KLplot:
     plt.plot(np.arange(len(kls)), kls, 'k')
-    plt.plot(np.arange(len(wolff_kls)), wolff_kls, 'g')
     plt.xlabel('number of states', fontsize=16)
     plt.ylabel('KL distance', fontsize=16)
     plt.title('KL distance '+str(size)+'x'+str(size)+' grid', fontsize=16)
-    plt.savefig('KLdistance'+str(size)+'x'+str(size))
+    #plt.savefig('KLdistance'+str(size)+'x'+str(size))
+    plt.show()
+    plt.clf()
 
-
-
-'''
 #convert to np arrays
 E_alphas = np.reshape(np.array(E_alphas) , (len(E_alphas),1))
 C_alphas = np.reshape(np.array(C_alphas) , (len(C_alphas),1))
+
+
 
 #STEP 2: learn effective hamiltionian
 
@@ -205,16 +176,31 @@ E_effs = np.reshape(np.array(E_effs) , (len(E_effs),1))
 mean_err = np.mean(abs(E_alphas - E_effs))
 print(mean_err)
 
+#change spin-correlation and energy for plotting
+idx = np.where(C_alphas >= 0)
+C_plot = C_alphas[idx] / float(size**2)
+E_plot = E_alphas[idx] / float(size**2)
+E_eff_plot = E_effs[idx] / float(size**2)
+
 #plot effective hamiltionian fit
-plt.plot(C_alphas, E_alphas, 'ko')
-plt.plot(C_alphas, E_effs, 'g')
-plt.xlabel(r'$C_n^{\alpha}$', fontsize=16)
-plt.ylabel(r'$E^{\alpha}$', fontsize=16)
-plt.savefig('H-eff fit', bbox_inches='tight')
-
-#plot magnetization phase transition
+plt.plot(C_plot, E_plot, 'ko')
+plt.plot(C_plot, E_eff_plot, 'g')
+plt.xlabel(r'$C_1/N$', fontsize=16)
+plt.ylabel(r'$E/N$', fontsize=16)
+#plt.savefig('H-eff fit', bbox_inches='tight')
+plt.show()
 plt.clf()
-'''
 
 
+#STEP 3 and 4: Perform SLMC Wolff update
+T_slmc = 3. #temperature to perform SLMC at
+beta = 1/(k_b * T_slmc) #new beta
+kwargs = {'E0':E0, 'J1':J1} #arguments for h_eff in slmc class
+
+slmc = SLMCUpdater(J1, beta, hamiltonian, h_eff, **kwargs)
+
+state = np.random.randint(0, 2, (size,size)) #initialize state from 0 to 1
+state[state==0] = -1 #replace 0s with -1s
+
+state = slmc.update(state)
 

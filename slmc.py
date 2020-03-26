@@ -4,13 +4,18 @@
 #import modules
 import numpy as np
 
-class WolffUpdater():
+class SLMCUpdater():
     
     state = []
     cluster_sites = []
     
-    def __init__(self, J_factor, beta):
+    def __init__(self, J_factor, beta, hamiltonian, h_eff, **kwargs):
         self.e_const = 2.*J_factor*beta #factor for link probability
+        self.beta = beta
+
+        self.hamiltonian = hamiltonian #original hamiltonian
+        self.h_eff = h_eff #effective hamiltonian
+        self.kwargs = kwargs #arguments for h_eff
     
     #calculate probability of link
     def calc_prob(self, site1, site2):
@@ -36,7 +41,7 @@ class WolffUpdater():
     
     #update given state
     def update(self, state):
-        self.state = state
+        self.state = np.copy(state) #update state
         size = len(state)
         
         #randomly select a site
@@ -50,5 +55,16 @@ class WolffUpdater():
         self.add_site(i,j,(i+1) % size,j)
         self.add_site(i,j,(i-1) % size,j)
             
-        return self.state #return updated state
+        #decide whether or not to accept the update    
+        e_diffB = self.hamiltonian(self.state) - self.h_eff(self.state, **self.kwargs)
+        e_diffA = self.hamiltonian(state) - self.h_eff(state, **self.kwargs)
+        p_exp = np.exp(-self.beta * (e_diffB - e_diffA))
+        prob = min(1, p_exp)
+        p_rand = np.random.uniform(0, 1) #random number
+        if p_rand < prob:
+            return_state = self.state #return new state
+        else:
+            return_state = state #return old state
+        
+        return return_state
     
