@@ -28,16 +28,18 @@ def plot_autocorrelation(autocorr_chain, color):
     start_id = autocorr_chain.index(np.nanmax(autocorr_chain))
 
     #perform fit
-    par, cov = curve_fit(autocorrelation_function, range(len(autocorr_chain[start_id:])), autocorr_chain[start_id:])
+    plot_xs = np.arange(len(autocorr_chain[start_id:]))+start_id
+    par, cov = curve_fit(autocorrelation_function, plot_xs, autocorr_chain[start_id:], p0=[0.1,start_id,0.02,1./50.])
+    print(par)
     
     #calculate plot data points
     plot_ys=[]
-    for x in range(len(autocorr_chain)):
+    for x in plot_xs:
         y = autocorrelation_function(x, par[0], par[1], par[2], par[3])
         plot_ys.append(y)
         
     #plot fit
-    plt.plot(range(len(autocorr_chain)), plot_ys, color)
+    plt.plot(plot_xs, plot_ys, color)
     
     #return autocorrelation time
     auto_time = 1./par[3]
