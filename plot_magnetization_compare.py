@@ -108,7 +108,7 @@ def calc_autocorr(state_chain):
     mag_autocorr = []
     for dt in delta_ts:
         mag_prod = mags[ : chain_length-dt] * mags[dt : chain_length] #product of magnetizations
-        mag_autocorr.append(np.mean(mag_prod))# - mag**2) #autocorrelation for delta_t
+        mag_autocorr.append(np.mean(mag_prod) - mag**2) #autocorrelation for delta_t
     
     return mag, mag_autocorr
     
