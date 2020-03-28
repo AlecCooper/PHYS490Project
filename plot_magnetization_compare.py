@@ -14,7 +14,7 @@ from scipy.optimize import curve_fit
 J_factor = 1.0e-4 #nearest-neighbor term factor
 K_factor = 0.2e-4 #plaquette term factor
 size = 15 #size of state in 1D
-chain_length = 500 #number of states to generate
+chain_length = 1000 #number of states to generate
 k_b = 8.617e-5 #Boltzmann constant in eV/K
 
 
@@ -94,11 +94,25 @@ def hamiltonian(state, i_ind=None, j_ind=None):
 
 #calculate autocorrelation
 def calc_autocorr(state_chain):
+    #calculate list of magnetizations per site
     mags=[] #list of magnetizations
     for i in range(len(state_chain)):
         mags.append(abs(np.sum(state_chain[i])) / float(size**2))
-    mag = abs(np.mean(mags)) #magnetization
+
+    start_t = 100 #initial time
+    chain_length = len(state_chain) - start_t
+    mags = np.array(mags[start_t:])
+    mag = np.mean(mags) #magnetization
     
+    delta_ts = range(1, chain_length - start_t) #range of delta ts
+    mag_autocorr = []
+    for dt in delta_ts:
+        mag_prod = mags[ : chain_length-dt] * mags[dt : chain_length] #product of magnetizations
+        mag_autocorr.append(np.mean(mag_prod))# - mag**2) #autocorrelation for delta_t
+    
+    return mag, mag_autocorr
+    
+    '''
     mag_product=[] #product of current and next magnetization
     mag_autocorr=[] #autocorrelation function
     for i in range(len(state_chain)-1):
@@ -109,6 +123,7 @@ def calc_autocorr(state_chain):
         mag_autocorr.append(mag_product_exp - mag_exp**2)
  
     return mag, mag_autocorr
+    '''
 
 #calculate magnetization for a given temperature
 def calc_mag(T):
@@ -207,15 +222,17 @@ T = 2.6
 local_autocorr, wolff_autocorr, slmc_autocorr = calc_mag(T)
 colors = ['k', 'g', 'b']
 
-p1,=plt.plot(range(chain_length), local_autocorr, colors[0])
-p2,=plt.plot(range(chain_length), wolff_autocorr, colors[1])
-p3,=plt.plot(range(chain_length), slmc_autocorr, colors[2])
+p1,=plt.plot(range(len(local_autocorr)), local_autocorr, colors[0])
+p2,=plt.plot(range(len(wolff_autocorr)), wolff_autocorr, colors[1])
+p3,=plt.plot(range(len(slmc_autocorr)), slmc_autocorr, colors[2])
 
+'''
 #perform autocorrelation fits
 local_time = plot_autocorrelation(local_autocorr, colors[0])
 wolff_time = plot_autocorrelation(wolff_autocorr, colors[1])
 slmc_time = plot_autocorrelation(slmc_autocorr, colors[2])
 print(local_time, wolff_time, slmc_time)
+'''
 
 #format plot and label
 plt.legend([p1,p2,p3], ['local','wolff','slmc'])
@@ -225,25 +242,5 @@ plt.ylabel(r'$\langle M(t)M(t+dt) \rangle - \langle M \rangle ^2$', fontsize=16)
 plt.savefig('autocorrelation_compare', bbox_inches='tight')
 
 
-
-'''
-Ts = np.arange(0.5, 2.0, 0.5)
-Ts = np.array([0.25, 1.0, 2.0])
-Ts *= T_c
-
-size = 15 #size of state in 1D
-ps = []
-legend_labels = []
-for T in Ts:
-    moment, mags_autocorr = calc_mag(T)
-    p,=plt.plot(range(len(mags_autocorr)), mags_autocorr)
-    ps.append(p)
-    legend_labels.append(str(T/T_c)+r' $T_c$')
-
-plt.legend(ps,legend_labels)
-plt.xlabel(r'$dt$', fontsize=16)
-plt.ylabel(r'$\langle M(t)M(t+dt) \rangle - \langle M^2 \rangle$', fontsize=16)
-plt.savefig('Fig3ofPaper_local')
-'''
 
 
