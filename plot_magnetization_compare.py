@@ -17,7 +17,7 @@ K_factor = 0.2e-4 #plaquette term factor
 size = 40 #size of state in 1D
 train_chain_length = 1000 #number of states to generate while training
 chain_length = 10000 #number of states to generate
-burn_in = 0#100 #number of steps in burn in
+burn_in = 100 #number of steps in burn in
 max_dt = 1000 #maximum dt in autocorrelation plot
 k_b = 8.617e-5 #Boltzmann constant in eV/K
 
@@ -244,9 +244,9 @@ print(local_time, wolff_time, slmc_time)
 
 #read in data
 in_data = np.genfromtxt('autocorrelation.csv', delimiter=',')
-local_autocorr = in_data[1][5:] #trim first few points
-wolff_autocorr = in_data[2][5:]
-slmc_autocorr = in_data[3][5:]
+local_autocorr = in_data[1]#[5:] #trim first few points
+wolff_autocorr = in_data[2]#[5:]
+slmc_autocorr = in_data[3]#[5:]
 
 colors = ['k', 'g', 'b']
 p1,=plt.plot(range(len(local_autocorr)), local_autocorr, colors[0])
