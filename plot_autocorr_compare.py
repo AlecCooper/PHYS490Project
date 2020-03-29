@@ -114,15 +114,11 @@ def calc_autocorr(state_chain):
     return mu , auto_corr
 
     '''
-    start_t = 100 #initial time
-    chain_length = len(state_chain) - start_t
-    mags = np.array(mags[start_t:])
+    mags = np.array(mags[burn_in:]) #trim off burn-in
     mag = np.mean(mags) #magnetization
-    
-    delta_ts = range(1, chain_length - start_t) #range of delta ts
     mag_autocorr = []
-    for dt in delta_ts:
-        mag_prod = mags[ : chain_length-dt] * mags[dt : chain_length] #product of magnetizations
+    for dt in range(1, max_dt):
+        mag_prod = mags[:-dt] * mags[dt:] #product of magnetizations
         mag_autocorr.append(np.mean(mag_prod) - mag**2) #autocorrelation for delta_t
     
     return mag, mag_autocorr
