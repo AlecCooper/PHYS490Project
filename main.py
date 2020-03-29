@@ -18,8 +18,8 @@ with open(param_file) as paramfile:
 
 # Assign variables from paramater file
 #global variables (temporary)
-J_factor = params["J Factor"] #nearest-neighbor term factor
-K_factor = params["K Factor"] #plaquette term factor
+J_factor = params["J factor"] #nearest-neighbor term factor
+K_factor = params["K factor"] #plaquette term factor
 size = params["size"] #size of state in 1D
 chain_length = params["chain length"] #number of states to generate
 T_start = params["T start"] #starting temperature
