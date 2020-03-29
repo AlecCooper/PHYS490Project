@@ -1,4 +1,4 @@
-# class that performs Wolff-cluster update on a given state
+# class that performs Self-Learning-Monte-Carlo update on a given state
 # returns the next state in the Markcv chain
 
 #import modules
