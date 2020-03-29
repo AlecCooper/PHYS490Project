@@ -114,17 +114,20 @@ def calc_autocorr(state_chain):
     return mu , auto_corr
 
     '''
-    mag_product=[] #product of current and next magnetization
-    mag_autocorr=[] #autocorrelation function
-    for i in range(len(state_chain)-1):
-        mag_product.append(mags[i]*mags[i+1])
-        
-        mag_product_exp = np.mean(mag_product)
-        mag_exp = np.mean(mags[:i])
-        mag_autocorr.append(mag_product_exp - mag_exp**2)
- 
+    start_t = 100 #initial time
+    chain_length = len(state_chain) - start_t
+    mags = np.array(mags[start_t:])
+    mag = np.mean(mags) #magnetization
+    
+    delta_ts = range(1, chain_length - start_t) #range of delta ts
+    mag_autocorr = []
+    for dt in delta_ts:
+        mag_prod = mags[ : chain_length-dt] * mags[dt : chain_length] #product of magnetizations
+        mag_autocorr.append(np.mean(mag_prod) - mag**2) #autocorrelation for delta_t
+    
     return mag, mag_autocorr
     '''
+
 
 #calculate magnetization for a given temperature
 def calc_mag(T):
