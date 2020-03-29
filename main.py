@@ -4,19 +4,29 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import json
 from localupdate import LocalUpdater
 from wolffupdate import WolffUpdater
 from slmc import SLMCUpdater
 
+# Name of parameter file (temporary)
+param_file = "params/params.json"
+
+# Parameters from json file
+with open(param_file) as paramfile:
+    params = json.load(paramfile)
+
+# Assign variables from paramater file
 #global variables (temporary)
-J_factor = 1.0e-4 #nearest-neighbor term factor
-K_factor = 0.2e-4 #plaquette term factor
-size = 10 #size of state in 1D
-chain_length = 1000 #number of states to generate
-T_start = 5. #starting temperature
-KLplot = True #whether or not to calculate and plot KL distance
+J_factor = params["J Factor"] #nearest-neighbor term factor
+K_factor = params["K Factor"] #plaquette term factor
+size = params["size"] #size of state in 1D
+chain_length = params["chain length"] #number of states to generate
+T_start = params["T start"] #starting temperature
+KLplot = params["KL plot"] #whether or not to calculate and plot KL distance
 if size>4: #do not calculate KL distance if larger than 4x4
     KLplot = False
+
 
 #calculate spin correlation
 def spin_correlation(state):
