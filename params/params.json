@@ -1,7 +1,7 @@
 {"J factor":1.0e-4,
     "K factor":0.2e-4,
     "size": 10,
-    "chain_length":1000,
+    "chain length":1000,
     "T start":0.5,
     "KL plot":true
 }
