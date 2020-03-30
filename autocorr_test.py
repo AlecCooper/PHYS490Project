@@ -14,8 +14,8 @@ import time
 #global variables (temporary)
 J_factor = 1.0e-4 #nearest-neighbor term factor
 K_factor = 0.2e-4 #plaquette term factor
-size = 40 #size of state in 1D
-chain_length = 10000 #number of states to generate
+size = 20 #size of state in 1D
+chain_length = 50000 #number of states to generate
 burn_in = 1000 #number of steps in burn in
 max_dt = 1000 #maximum dt in autocorrelation plot
 k_b = 8.617e-5 #Boltzmann constant in eV/K
@@ -64,9 +64,9 @@ def calc_autocorr(state_chain):
     for i in range(len(state_chain)):
         mags.append(abs(np.sum(state_chain[i])) / float(size**2))
 
-    plt.plot(range(len(mags)),mags,'k')
-    plt.show()
-    plt.clf()
+    #plt.plot(range(len(mags)),mags,'k')
+    #plt.show()
+    #plt.clf()
 
     '''
     mags = np.array(mags[burn_in:]) #trim off burn-in
@@ -77,7 +77,6 @@ def calc_autocorr(state_chain):
     return mu , auto_corr
     '''
 
-
     mags = np.array(mags[burn_in:]) #trim off burn-in
     mag = np.mean(mags) #magnetization
     mag_autocorr = []
@@ -87,6 +86,18 @@ def calc_autocorr(state_chain):
     
     return mag, mag_autocorr
     
+    '''
+    mag_product=[] #product of current and next magnetization
+    mag_autocorr=[] #autocorrelation function
+    for i in range(len(state_chain)-1):
+        mag_product.append(mags[i]*mags[i+1])
+        
+        mag_product_exp = np.mean(mag_product)
+        mag_exp = np.mean(mags[:i])
+        mag_autocorr.append(mag_product_exp - mag_exp**2)
+ 
+    return mag, mag_autocorr
+    '''
 
 #calculate magnetization for a given temperature
 def calc_mag(T):
@@ -114,7 +125,7 @@ def calc_mag(T):
         state_chain.append(state)
         
         #print steps occaisonally
-        if (n%100)==0:
+        if (n%1000)==0:
             print(n, '{0:.3f}.'.format(time.time()-start_time))
 
 
@@ -128,17 +139,39 @@ def calc_mag(T):
 T_c = (2/np.log(1+np.sqrt(2))) * (J_factor/k_b)
 print(T_c)
 
-T = 2.8
+mode = 0 #0=calculate, 1=plot
 
-local_autocorr = calc_mag(T)
-plt.plot(range(len(local_autocorr)), local_autocorr, 'k')
-
-#format plot and label
-plt.xlabel(r'$dt$', fontsize=16)
-plt.ylabel(r'$\langle M(t)M(t+dt) \rangle - \langle M \rangle ^2$', fontsize=16)
-
-plt.savefig('autocorrelation_compare', bbox_inches='tight')
-
-
+if mode==0: #calculate and output autocorrelation    
+    T = 2.5
+    
+    local_autocorr = calc_mag(T)
+    
+    output_array=np.array([range(len(local_autocorr)),local_autocorr])
+    np.savetxt('autocorrelation'+str(T)+'.csv', output_array, delimiter=',')
+    
+else: #plot autocorrelation
+    Ts = np.array([2.5])
+    
+    ps = []
+    legend_labels = []
+    colors=['k','g','b']
+    for i in range(len(Ts)):
+        T=Ts[i]
+            
+        #read in data
+        in_data = np.genfromtxt('autocorrelation'+str(T)+'.csv', delimiter=',')
+        local_autocorr = in_data[1]
+        local_autocorr /= max(local_autocorr) #normalize
+        
+        p,=plt.plot(range(len(local_autocorr)), local_autocorr, colors[i])
+        ps.append(p)
+        legend_labels.append(str(T))#str(T/T_c)+r' $T_c$')
+    
+    #format plot and label
+    plt.legend(ps,legend_labels)
+    plt.xlabel(r'$dt$', fontsize=16)
+    plt.ylabel(r'$\langle M(t)M(t+dt) \rangle - \langle M \rangle ^2$', fontsize=16)
+    
+    plt.savefig('autocorrelation_compare', bbox_inches='tight')
 
 
