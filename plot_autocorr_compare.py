@@ -14,10 +14,10 @@ import time
 #global variables (temporary)
 J_factor = 1.0e-4 #nearest-neighbor term factor
 K_factor = 0.2e-4 #plaquette term factor
-size = 40 #size of state in 1D
+size = 20 #size of state in 1D
 train_chain_length = 1000 #number of states to generate while training
-chain_length = 10000 #number of states to generate
-burn_in = 100 #number of steps in burn in
+chain_length = 50000 #number of states to generate
+burn_in = 1000 #number of steps in burn in
 max_dt = 1000 #maximum dt in autocorrelation plot
 k_b = 8.617e-5 #Boltzmann constant in eV/K
 
@@ -107,14 +107,6 @@ def calc_autocorr(state_chain):
         mags.append(abs(np.sum(state_chain[i])) / float(size**2))
 
     mags = np.array(mags[burn_in:]) #trim off burn-in
-    auto_corr = np.zeros(max_dt)
-    mu = np.mean(mags)
-    for s in range(1, max_dt):
-        auto_corr[s] = np.mean( (mags[:-s]-mu) * (mags[s:]-mu) ) #/ np.var(mags)
-    return mu , auto_corr
-
-    '''
-    mags = np.array(mags[burn_in:]) #trim off burn-in
     mag = np.mean(mags) #magnetization
     mag_autocorr = []
     for dt in range(1, max_dt):
@@ -122,7 +114,7 @@ def calc_autocorr(state_chain):
         mag_autocorr.append(np.mean(mag_prod) - mag**2) #autocorrelation for delta_t
     
     return mag, mag_autocorr
-    '''
+    
 
 
 #calculate magnetization for a given temperature
@@ -206,7 +198,7 @@ def calc_mag(T):
         wolff_chain.append(wolff_state)
         slmc_chain.append(slmc_state)
         
-        if (n%100)==0:
+        if (n%1000)==0:
             print(n, '{0:.3f}.'.format(time.time()-start_time))
         
     #generate mag chains
@@ -221,47 +213,54 @@ def calc_mag(T):
 T_c = (2/np.log(1+np.sqrt(2))) * (J_factor/k_b)
 print(T_c)
 
-'''
-#calculate and output autocorrelation
-T = 2.6
-local_autocorr, wolff_autocorr, slmc_autocorr = calc_mag(T)
+mode=0 #0=calculate, 1=plot
+T = 3.
 
-output_array=np.array([range(len(local_autocorr)),local_autocorr,wolff_autocorr,slmc_autocorr])
-np.savetxt('autocorrelation.csv', output_array, delimiter=',')
-'''
+if mode==0: #calculate and output autocorrelation    
+    local_autocorr, wolff_autocorr, slmc_autocorr = calc_mag(T)
+    
+    output_array=np.array([range(len(local_autocorr)),local_autocorr,wolff_autocorr,slmc_autocorr])
+    np.savetxt('autocorrelation_compare'+str(T)+'.csv', output_array, delimiter=',')
+    
+else: #plot autocorrelation
+    #read in data
+    in_data = np.genfromtxt('autocorrelation_compare'+str(T)+'.csv', delimiter=',')
+    local_autocorr = in_data[1]#[5:] #trim first few points
+    wolff_autocorr = in_data[2]#[5:]
+    slmc_autocorr = in_data[3]#[5:]
 
-#plot autocorrelation
+    #normalize
+    local_autocorr /= max(local_autocorr)
+    wolff_autocorr /= max(wolff_autocorr)
+    slmc_autocorr /= max(slmc_autocorr)
+    
+    #truncate to specified length
+    max_dt_plot=500
+    local_autocorr = local_autocorr[:max_dt_plot]
+    wolff_autocorr = wolff_autocorr[:max_dt_plot]
+    slmc_autocorr = slmc_autocorr[:max_dt_plot]
+    
+    '''
+    #perform autocorrelation fits
+    local_time = plot_autocorrelation(local_autocorr, colors[0])
+    wolff_time = plot_autocorrelation(wolff_autocorr, colors[1])
+    slmc_time = plot_autocorrelation(slmc_autocorr, colors[2])
+    print(local_time, wolff_time, slmc_time)
+    '''
+    
+    colors = ['k', 'g', 'b']
+    p1,=plt.plot(range(len(local_autocorr)), local_autocorr, colors[0])
+    p2,=plt.plot(range(len(wolff_autocorr)), wolff_autocorr, colors[1])
+    p3,=plt.plot(range(len(slmc_autocorr)), slmc_autocorr, colors[2])
+    
+    #format plot and label
+    plt.legend([p1,p2,p3], ['local','wolff','slmc'])
+    plt.xlabel(r'$dt$', fontsize=16)
+    plt.ylabel(r'$\langle M(t)M(t+dt) \rangle - \langle M \rangle ^2$', fontsize=16)
+    
+    plt.savefig('autocorrelation_compare', bbox_inches='tight')
 
-'''
-#perform autocorrelation fits
-local_time = plot_autocorrelation(local_autocorr, colors[0])
-wolff_time = plot_autocorrelation(wolff_autocorr, colors[1])
-slmc_time = plot_autocorrelation(slmc_autocorr, colors[2])
-print(local_time, wolff_time, slmc_time)
-'''
 
-
-#read in data
-in_data = np.genfromtxt('autocorrelation.csv', delimiter=',')
-local_autocorr = in_data[1]#[5:] #trim first few points
-wolff_autocorr = in_data[2]#[5:]
-slmc_autocorr = in_data[3]#[5:]
-
-colors = ['k', 'g', 'b']
-p1,=plt.plot(range(len(local_autocorr)), local_autocorr, colors[0])
-p2,=plt.plot(range(len(wolff_autocorr)), wolff_autocorr, colors[1])
-p3,=plt.plot(range(len(slmc_autocorr)), slmc_autocorr, colors[2])
-
-#format plot and label
-plt.legend([p1,p2,p3], ['local','wolff','slmc'])
-plt.xlabel(r'$dt$', fontsize=16)
-plt.ylabel(r'$\langle M(t)M(t+dt) \rangle - \langle M \rangle ^2$', fontsize=16)
-
-plt.savefig('autocorrelation_compare', bbox_inches='tight')
-
-
-#found new method for calculating autocorrelation at
-# https://rstudio-pubs-static.s3.amazonaws.com/258436_5c7f6f9a84bd47aeaa33ee763e57a531.html
 
 
 
