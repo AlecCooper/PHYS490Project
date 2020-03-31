@@ -20,6 +20,7 @@ J_factor = 1.0e-4 #nearest-neighbor term factor
 K_factor = 0.2e-4 #plaquette term factor
 size = 5 #size of state in 1D
 chain_length = 2000 #number of states to generate
+burn_in = 1500 #number of steps in burn in
 k_b = 8.617e-5 #Boltzmann constant in eV/K
 
 #original hamiltonian
@@ -80,7 +81,7 @@ def calc_mag(T):
         state_chain.append(state)
     
     #calculate magnetization
-    state_chain=state_chain[1500:]
+    state_chain=state_chain[burn_in:]
 
     mags=[]
     for s in state_chain:
