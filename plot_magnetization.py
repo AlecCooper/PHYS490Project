@@ -89,60 +89,59 @@ def calc_mag(T):
     return np.mean(mags)
     
 
+mode=0 #0=calculate, 1=plot
+
+#temperature range
 Ts = np.arange(0.5,9.,0.5)
 step = (Ts[-1] - Ts[0]) / 100
 T_plot = np.arange(Ts[0], Ts[-1]+step, step)
 
-sizes=[5,10,15]
-colors=['k','g','b']
-ps=[]
-labels=[]
-last_y = np.zeros(len(T_plot))
-T_intersect = []
-y_intersect = []
-for i in range(len(sizes)):
-    size = sizes[i]
-    
-    #plot data points
+#linear size
+size = 15
+
+if mode==0: #calculate and output magnetization
     mags=[]
     for T in Ts:
         mags.append(calc_mag(T))
         print(size, T)
-    p1,=plt.plot(Ts, mags, colors[i]+'o')
-    ps.append(p1)
-    labels.append(str(size)+'x'+str(size))
-
-    #perform fit
-    par, cov = curve_fit(mag_function, Ts[1:], mags[1:], p0=[1., 2.5, 0.5, 4.])
-    print(par)
-    
-    ys = mag_function(T_plot, par[0],par[1],par[2],par[3])
-    plt.plot(T_plot, ys, colors[i])
-
-    #find intersection
-    if np.sum(last_y) != 0:
-        idx = np.argwhere(np.diff(np.sign(last_y - ys))).flatten()
-        T_intersect.extend(T_plot[idx])
-        y_intersect.extend(ys[idx])
         
-    last_y = ys
+    output_array=np.array([Ts, mags])
+    np.savetxt('magnetization_'+str(size)+'.csv', output_array, delimiter=',')
+        
+else: #plot magnetization
+    sizes = [5,10,15]
+    colors = ['k','g','b']
 
-#plot critical temperature
-print(T_intersect)
-plt.plot(T_intersect[0], y_intersect[0], 'ro')
-ax = plt.gca()
-plt.text(0.05,0.05,r'$T_c: $'+'{0:.2f}'.format(T_intersect[0]),fontsize=16,ha='left',va='bottom',transform=ax.transAxes)
+    ps=[]
+    labels=[]
+    for i in range(len(sizes)):
+        size = sizes[i]
+        
+        #read in data
+        in_data = np.genfromtxt('magnetization_'+str(size)+'.csv', delimiter=',')
+        Ts = in_data[0]
+        mags = in_data[1]
+        
+        p1,=plt.plot(Ts, mags, colors[i]+'o')
+        ps.append(p1)
+        labels.append(str(size)+'x'+str(size))
+    
+        #perform fit
+        par, cov = curve_fit(mag_function, Ts[1:], mags[1:], p0=[1., 2.5, 0.5, 4.])
+        print(par)
+        
+        ys = mag_function(T_plot, par[0],par[1],par[2],par[3])
+        plt.plot(T_plot, ys, colors[i])
+    
+    #plot legend
+    if len(sizes) > 1:
+        plt.legend(ps, labels)
 
-#plot legend
-if len(sizes) > 1:
-    plt.legend(ps, labels)
-
-T_c = (2/np.log(1+np.sqrt(2))) * (J_factor/k_b)
-print(T_c)
-#plt.plot([T_c, T_c], [0,1], 'r--')
-
-
-plt.xlabel(r'$T$', fontsize=16)
-plt.ylabel(r'$m$', fontsize=16)
-plt.savefig('magnetization')
+    #plot critical temperature
+    #T_c = 2.6
+    #plt.plot([T_c, T_c], [0,1], 'r--')    
+    
+    plt.xlabel(r'$T$', fontsize=16)
+    plt.ylabel(r'$m$', fontsize=16)
+    plt.savefig('autocorrelation_compare', bbox_inches='tight')
 
