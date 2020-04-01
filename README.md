@@ -45,3 +45,15 @@ In order to generate a plot of magnetization as a function of temperature, run
 ```
 python plot_autocorr_compare.py
 ```
+At the top of the file, the user can specify
+- The J and K parameters of the Hamiltonian
+- The temperature
+- The size of the system
+- The number of steps in the Markov chain for calculating the autocorrelation
+- The number of steps in a separate Markov chain for training the SLMC
+- The number of burn-in steps
+- The maximum dt interval to be calculated for the autocorrelation
+- The mode the script will run in (0 for calculating and outputting data, 1 for plotting results)
+
+This script will ouput a csv file containing the dt intervals and the autocorrelation for all 3 methods.
+
