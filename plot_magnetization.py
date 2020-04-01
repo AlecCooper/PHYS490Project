@@ -16,6 +16,9 @@ def mag_function(x,a,b,c,e):
     y = np.piecewise(x, [x==b, x<b, x>b], [c, less_func, more_func])
     return y
 
+#which mode the script is in
+mode=1 #0=calculate, 1=plot
+
 #global variables (temporary)
 J_factor = 1.0e-4 #nearest-neighbor term factor
 K_factor = 0.2e-4 #plaquette term factor
@@ -23,7 +26,10 @@ size = 15 #size of state in 1D
 chain_length = 2000 #number of states to generate
 burn_in = 1500 #number of steps in burn in
 k_b = 8.617e-5 #Boltzmann constant in eV/K
-
+Ts = np.arange(0.5,9.,0.5) #temperature range
+sizes = [10,15,20] #sizes to plot
+colors = ['k','g','b'] #colors of plots
+    
 #original hamiltonian
 def hamiltonian(state, i_ind=None, j_ind=None):            
     if i_ind==None and j_ind==None: #if no indices specified
@@ -107,11 +113,7 @@ def calc_mag(T):
     
     return np.mean(mags)
     
-
-mode=1 #0=calculate, 1=plot
-
-#temperature range
-Ts = np.arange(0.5,9.,0.5)
+#temperature range to plot
 step = (Ts[-1] - Ts[0]) / 100
 T_plot = np.arange(Ts[0], Ts[-1]+step, step)
 
@@ -125,9 +127,6 @@ if mode==0: #calculate and output magnetization
     np.savetxt('magnetization_'+str(size)+'.csv', output_array, delimiter=',')
         
 else: #plot magnetization
-    sizes = [10,15,20]
-    colors = ['k','g','b']
-
     ps=[]
     labels=[]
     for i in range(len(sizes)):

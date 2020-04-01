@@ -10,6 +10,8 @@ from slmc import SLMCUpdater
 from scipy.optimize import curve_fit
 import time
 
+#which mode the script is in
+mode=1 #0=calculate, 1=plot
 
 #global variables (temporary)
 J_factor = 1.0e-4 #nearest-neighbor term factor
@@ -206,8 +208,6 @@ def calc_mag(T):
 
 
 
-mode=1 #0=calculate, 1=plot
-
 if mode==0: #calculate and output autocorrelation    
     local_autocorr, wolff_autocorr, slmc_autocorr = calc_mag(T)
     
@@ -221,7 +221,7 @@ else: #plot autocorrelation
     wolff_autocorr = in_data[2]
     slmc_autocorr = in_data[3]
     
-    #try to read in additional data
+    #try to read in additional data (if available)
     try:
         wolff_data = np.genfromtxt('autocorrelation_time'+str(T)+'_'+str(size)+'_wolff.csv', delimiter=',')
         slmc_data = np.genfromtxt('autocorrelation_time'+str(T)+'_'+str(size)+'_slmc.csv', delimiter=',')

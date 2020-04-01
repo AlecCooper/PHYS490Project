@@ -9,7 +9,7 @@ from scipy.optimize import curve_fit
 J_factor = 1.0e-4 #nearest-neighbor term factor
 K_factor = 0.2e-4 #plaquette term factor
 k_b = 8.617e-5 #Boltzmann constant in eV/K
-
+T = 3.3 #temperature
 
 def time_func(x, e, a):
     return a*np.power(x, e)
@@ -44,8 +44,6 @@ def plot_autocorrelation(autocorr_chain, color=None):
 
 
 
-
-T = 3.3
 sizes = [5,10,15,20,30,40,50,60,75]
 wolff_sizes = [20,40,60,80,100]
 
