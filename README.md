@@ -6,6 +6,7 @@ There are three methods for generating states for the Ising model
 - wolffupdate.py - the global update method using the Wolff algorithm
 - slmc.py - the self-learning method, using Wolff algoritm and trained parameters
 
+# Training the model
 To train the self-learning model, run
 ```
 python train_slmc.py
@@ -22,9 +23,9 @@ The script will then generate a separate chain of states to be used for testing.
 
 The script will also calculate the KL-distance for all 3 methods and plot them as a function of epoch. The script only does this for states that are 4x4 or smaller. The number of possible states increases with size as 2^(size * size), making this exceptionally slow for larger states. 
 
-
 Depending on what the user wishes to do, there are three different scripts that output data or plots.
 
+# Plotting the magnetization
 In order to generate a plot of magnetization as a function of temperature, run
 ```
 python plot_magnetization.py
@@ -38,4 +39,9 @@ This plot is useful for determining the critical temperature. In addition to the
 
 This script will output a csv file containing the temperatures and mean magnetizations per site. These can be used later to plot several linear sizes as once to observe how size affects the magnetization.
 
-
+# Comparing the autocorrelation
+In order to calculate the autocorrelation for all 3 methods, run
+In order to generate a plot of magnetization as a function of temperature, run
+```
+python plot_autocorr_compare.py
+```
