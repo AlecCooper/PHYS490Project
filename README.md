@@ -37,7 +37,7 @@ This plot is useful for determining the critical temperature. In addition to the
 - The linear sizes to plot (if mode is 1)
 - The colors of the plots
 
-This script will output a csv file containing the temperatures and mean magnetizations per site. These can be used later to plot several linear sizes as once to observe how size affects the magnetization.
+This script will output a csv file containing the temperatures and mean magnetizations per site. By chaing the mode, these can be used later to plot several linear sizes as once to observe how size affects the magnetization.
 
 # Comparing the autocorrelation
 In order to calculate the autocorrelation for all 3 methods, run
@@ -55,5 +55,12 @@ At the top of the file, the user can specify
 - The maximum dt interval to be calculated for the autocorrelation
 - The mode the script will run in (0 for calculating and outputting data, 1 for plotting results)
 
-This script will ouput a csv file containing the dt intervals and the autocorrelation for all 3 methods.
+This script will ouput a csv file containing the dt intervals and the autocorrelation for all 3 methods. These can be used when changing the mode of the script to plot the autocorrelation. These files are also used in other scripts to fit an exponential function.
+
+# Fitting a function to the autocorrelation
+To fit an exponential function to the autocorrelation from the previous script, run
+```
+python fit_autotime.py
+```
+This will determine the autocorrelation time for each data set. These will be compiled at the end and plotted as a function of linear size. A power law is fit to this plot to determine the dependence on linear size for the autocorrelation time for each method. This plot will be saved and the fit parameters will be displayed.
 
