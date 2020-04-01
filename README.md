@@ -22,6 +22,20 @@ The script will then generate a separate chain of states to be used for testing.
 
 The script will also calculate the KL-distance for all 3 methods and plot them as a function of epoch. The script only does this for states that are 4x4 or smaller. The number of possible states increases with size as 2^(size * size), making this exceptionally slow for larger states. 
 
-Depending on what the user wishes to do, there are three different scripts that out data or plots.
+
+Depending on what the user wishes to do, there are three different scripts that output data or plots.
+
+In order to generate a plot of magnetization as a function of temperature, run
+```
+python plot_magnetization.py
+```
+This plot is useful for determining the critical temperature. In addition to the parameters described above, the user can also specify
+- The number of steps required for the chain to burn-in. These will be trimmed from the result
+- The temperature range to plot over
+- The mode the script will run in (0 for calculating and outputting data, 1 for plotting results)
+- The linear sizes to plot (if mode is 1)
+- The colors of the plots
+
+This script will output a csv file containing the temperatures and mean magnetizations per site. These can be used later to plot several linear sizes as once to observe how size affects the magnetization.
 
 
