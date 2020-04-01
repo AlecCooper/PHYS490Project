@@ -22,16 +22,6 @@ The script will then generate a separate chain of states to be used for testing.
 
 The script will also calculate the KL-distance for all 3 methods and plot them as a function of epoch. The script only does this for states that are 4x4 or smaller. The number of possible states increases with size as 2^(size * size), making this exceptionally slow for larger states. 
 
-
 Depending on what the user wishes to do, there are three different scripts that out data or plots.
 
-To run `main.py`, use
-```
-python main.py
-```
 
-Currently calculates Hamiltonian for a test state with both a nearest-neighbor and a plaquette term.
-
-Step 1: Generates given number of states through local update. Takes a starting temperature to calculate thermodynamic beta and probabilities.
-
-Step 2: Performs a linear regression to learn E0 and J1 in the effective Hamiltonian. Plots states from the original Hamiltonian and the linear fit.
