@@ -2,19 +2,19 @@
 Recreation of results from the paper Self-Learning Monte Carlo Method for PHYS 490
 
 There are three methods for generating states for the Ising model
-localudpate.py - the local update method
-wolffupdate.py - the global update method using the Wolff algorithm
-slmc.py - the self-learning method, using Wolff algoritm and trained parameters
+- localudpate.py - the local update method
+- wolffupdate.py - the global update method using the Wolff algorithm
+- slmc.py - the self-learning method, using Wolff algoritm and trained parameters
 
 To train the self-learning model, run
 ```
 python train_slmc.py
 ```
 The user can specify parameters at the top of the file.
--The J and K factors for the Hamiltonian
--The linear size of the state
--The number of steps in the Markov chain
--The temperature
+- The J and K factors for the Hamiltonian
+- The linear size of the state
+- The number of steps in the Markov chain
+- The temperature
 
 This script will generate a specified number of states using the local update. The chain is initialized by a random state. After generating training states, the script will use linear regression to train the model parameters and output them.
 
