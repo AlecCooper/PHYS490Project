@@ -14,7 +14,8 @@ import time
 #global variables (temporary)
 J_factor = 1.0e-4 #nearest-neighbor term factor
 K_factor = 0.2e-4 #plaquette term factor
-size = 20 #size of state in 1D
+T = 3.3 #temperature
+size = 60 #size of state in 1D
 train_chain_length = 1000 #number of states to generate while training
 chain_length = 50000 #number of states to generate
 burn_in = 1000 #number of steps in burn in
@@ -28,12 +29,9 @@ def autocorrelation_function(x, a, b, c, t):
 
 #plot autocorrelation and return autocorrelation time
 def plot_autocorrelation(autocorr_chain, color):
-    #start fit at peak
-    start_id = autocorr_chain.index(np.nanmax(autocorr_chain))
-
     #perform fit
-    plot_xs = np.arange(len(autocorr_chain[start_id:]))+start_id
-    par, cov = curve_fit(autocorrelation_function, plot_xs, autocorr_chain[start_id:], p0=[0.1,start_id,0.02,1./50.])
+    plot_xs = np.arange(len(autocorr_chain))
+    par, cov = curve_fit(autocorrelation_function, plot_xs, autocorr_chain, p0=[1.,0.,0.02,1./50.])
     print(par)
     
     #calculate plot data points
@@ -158,6 +156,7 @@ def calc_mag(T):
     E0 = w_linear[0][0]
     J1 = -w_linear[1][0]
     kwargs = {'E0':E0, 'J1':J1} #arguments for h_eff in slmc class
+    print(E0, J1/J_factor)
     
     #STEP 3 and 4: perform SLMC
     beta = 1/(k_b * T) #new beta
@@ -169,9 +168,6 @@ def calc_mag(T):
     
     initial_state = np.random.randint(0, 2, (size,size)) #initialize state from 0 to 1
     initial_state[initial_state==0] = -1 #replace 0s with -1s
-    
-    local = LocalUpdater(hamiltonian, beta)
-    wolff = WolffUpdater(J_factor, beta)
     
     #markov chain of generated states
     local_chain = []
@@ -199,7 +195,7 @@ def calc_mag(T):
         slmc_chain.append(slmc_state)
         
         if (n%1000)==0:
-            print(n, '{0:.3f}.'.format(time.time()-start_time))
+            print(n, '{0:.3f}'.format(time.time()-start_time))
         
     #generate mag chains
     _, local_autocorr = calc_autocorr(local_chain)   
@@ -210,24 +206,29 @@ def calc_mag(T):
 
 
 
-T_c = (2/np.log(1+np.sqrt(2))) * (J_factor/k_b)
-print(T_c)
-
-mode=0 #0=calculate, 1=plot
-T = 3.
+mode=1 #0=calculate, 1=plot
 
 if mode==0: #calculate and output autocorrelation    
     local_autocorr, wolff_autocorr, slmc_autocorr = calc_mag(T)
     
     output_array=np.array([range(len(local_autocorr)),local_autocorr,wolff_autocorr,slmc_autocorr])
-    np.savetxt('autocorrelation_compare'+str(T)+'.csv', output_array, delimiter=',')
+    np.savetxt('autocorrelation_compare'+str(T)+'_'+str(size)+'.csv', output_array, delimiter=',')
     
 else: #plot autocorrelation
     #read in data
-    in_data = np.genfromtxt('autocorrelation_compare'+str(T)+'.csv', delimiter=',')
-    local_autocorr = in_data[1]#[5:] #trim first few points
-    wolff_autocorr = in_data[2]#[5:]
-    slmc_autocorr = in_data[3]#[5:]
+    in_data = np.genfromtxt('autocorrelation_compare'+str(T)+'_'+str(size)+'.csv', delimiter=',')
+    local_autocorr = in_data[1]
+    wolff_autocorr = in_data[2]
+    slmc_autocorr = in_data[3]
+    
+    #try to read in additional data
+    try:
+        wolff_data = np.genfromtxt('autocorrelation_time'+str(T)+'_'+str(size)+'_wolff.csv', delimiter=',')
+        slmc_data = np.genfromtxt('autocorrelation_time'+str(T)+'_'+str(size)+'_slmc.csv', delimiter=',')
+        wolff_autocorr = wolff_data[1]
+        slmc_autocorr = slmc_data[1]
+    except:
+        pass
 
     #normalize
     local_autocorr /= max(local_autocorr)
@@ -240,13 +241,13 @@ else: #plot autocorrelation
     wolff_autocorr = wolff_autocorr[:max_dt_plot]
     slmc_autocorr = slmc_autocorr[:max_dt_plot]
     
-    '''
-    #perform autocorrelation fits
-    local_time = plot_autocorrelation(local_autocorr, colors[0])
-    wolff_time = plot_autocorrelation(wolff_autocorr, colors[1])
-    slmc_time = plot_autocorrelation(slmc_autocorr, colors[2])
-    print(local_time, wolff_time, slmc_time)
-    '''
+    
+    ##perform autocorrelation fits
+    #local_time = plot_autocorrelation(local_autocorr, colors[0])
+    #wolff_time = plot_autocorrelation(wolff_autocorr, colors[1])
+    #slmc_time = plot_autocorrelation(slmc_autocorr, colors[2])
+    #print(local_time, wolff_time, slmc_time)
+    
     
     colors = ['k', 'g', 'b']
     p1,=plt.plot(range(len(local_autocorr)), local_autocorr, colors[0])

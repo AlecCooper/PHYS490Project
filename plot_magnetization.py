@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from localupdate import LocalUpdater
 from wolffupdate import WolffUpdater
+from slmc import SLMCUpdater
 from scipy.optimize import curve_fit
 
 #function to fit to magnetization
@@ -18,7 +19,7 @@ def mag_function(x,a,b,c,e):
 #global variables (temporary)
 J_factor = 1.0e-4 #nearest-neighbor term factor
 K_factor = 0.2e-4 #plaquette term factor
-size = 5 #size of state in 1D
+size = 15 #size of state in 1D
 chain_length = 2000 #number of states to generate
 burn_in = 1500 #number of steps in burn in
 k_b = 8.617e-5 #Boltzmann constant in eV/K
@@ -58,6 +59,18 @@ def hamiltonian(state, i_ind=None, j_ind=None):
 
     return -J_factor*e_neighbor - K_factor*e_plaquette
 
+#calculate spin correlation
+def spin_correlation(state):
+    horiz_shift = np.insert(state[:,1:], len(state[0,:])-1, state[:,0], axis=1) #horizonatally shifted state
+    vert_shift = np.insert(state[1:], len(state[:,0])-1, state[0], axis=0) #vertically shifted state
+
+    return np.sum( state*horiz_shift + state*vert_shift )
+
+#effective hamiltonian
+def h_eff(state, E0, J1):
+    e_neighbor = spin_correlation(state)
+    return E0 - J1*e_neighbor
+
 #calculate magnetization for a given temperature
 def calc_mag(T):
     beta = 1/(k_b * T) #thermodynamic beta
@@ -65,9 +78,14 @@ def calc_mag(T):
     local = LocalUpdater(hamiltonian, beta)
     #local = WolffUpdater(J_factor, beta)
 
+    #E0 = 0.00010260298968077158
+    #J1 = 1.0546392245059772*(1e-4)
+    #kwargs = {'E0':E0, 'J1':J1} #arguments for h_eff in slmc class
+    #local = SLMCUpdater(J1, beta, hamiltonian, h_eff, **kwargs)
+
     initial_state = np.random.randint(0, 2, (size,size)) #initialize state from 0 to 1
     initial_state[initial_state==0] = -1 #replace 0s with -1s
-      
+    
     #markov chain of generated states
     state_chain = []
     state_chain.append(initial_state)  
@@ -90,15 +108,12 @@ def calc_mag(T):
     return np.mean(mags)
     
 
-mode=0 #0=calculate, 1=plot
+mode=1 #0=calculate, 1=plot
 
 #temperature range
 Ts = np.arange(0.5,9.,0.5)
 step = (Ts[-1] - Ts[0]) / 100
 T_plot = np.arange(Ts[0], Ts[-1]+step, step)
-
-#linear size
-size = 15
 
 if mode==0: #calculate and output magnetization
     mags=[]
@@ -110,7 +125,7 @@ if mode==0: #calculate and output magnetization
     np.savetxt('magnetization_'+str(size)+'.csv', output_array, delimiter=',')
         
 else: #plot magnetization
-    sizes = [5,10,15]
+    sizes = [10,15,20]
     colors = ['k','g','b']
 
     ps=[]
@@ -139,10 +154,13 @@ else: #plot magnetization
         plt.legend(ps, labels)
 
     #plot critical temperature
-    #T_c = 2.6
-    #plt.plot([T_c, T_c], [0,1], 'r--')    
+    ax = plt.gca()
+    ylims = ax.get_ylim()
+    #T_c = 3.4
+    #plt.plot([T_c, T_c], ylims, 'r--')
+    ax.set_ylim(ylims)
     
     plt.xlabel(r'$T$', fontsize=16)
     plt.ylabel(r'$m$', fontsize=16)
-    plt.savefig('autocorrelation_compare', bbox_inches='tight')
+    plt.savefig('magnetization', bbox_inches='tight')
 
