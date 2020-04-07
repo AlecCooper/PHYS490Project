@@ -1,5 +1,6 @@
 # PHYS490Project
-Recreation of results from the paper Self-Learning Monte Carlo Method for PHYS 490
+Recreation of results from the paper [Self-Learning Monte Carlo Method](https://arxiv.org/abs/1610.03137) for PHYS 490
+
 
 There are three methods for generating states for the Ising model
 - localudpate.py - the local update method
