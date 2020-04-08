@@ -55,6 +55,8 @@ At the top of the file, the user can specify
 - The number of burn-in steps
 - The maximum dt interval to be calculated for the autocorrelation
 - The mode the script will run in (0 for calculating and outputting data, 1 for plotting results)
+- If an iterative fitting model is to be included (True for include, False for disclude)
+- Number of iterations in the iterative fitting model
 
 This script will ouput a csv file containing the dt intervals and the autocorrelation for all 3 methods. These can be used when changing the mode of the script to plot the autocorrelation. These files are also used in other scripts to fit an exponential function.
 
