@@ -9,6 +9,7 @@ from wolffupdate import WolffUpdater
 from slmc import SLMCUpdater
 from scipy.optimize import curve_fit
 import time
+import sklearn.linear_model as lm
 
 #which mode the script is in
 mode=1 #0=calculate, 1=plot
@@ -17,13 +18,14 @@ mode=1 #0=calculate, 1=plot
 J_factor = 1.0e-4 #nearest-neighbor term factor
 K_factor = 0.2e-4 #plaquette term factor
 T = 3.3 #temperature
-size = 60 #size of state in 1D
+size = 15 #size of state in 1D
 train_chain_length = 1000 #number of states to generate while training
 chain_length = 50000 #number of states to generate
 burn_in = 1000 #number of steps in burn in
 max_dt = 1000 #maximum dt in autocorrelation plot
 k_b = 8.617e-5 #Boltzmann constant in eV/K
-
+iterated = True # Calculate slmc iterated towards target temp
+iterations = 5
 
 #function that describes autocorrelation time
 def autocorrelation_function(x, a, b, c, t):
@@ -202,24 +204,87 @@ def calc_mag(T):
     #generate mag chains
     _, local_autocorr = calc_autocorr(local_chain)   
     _, wolff_autocorr = calc_autocorr(wolff_chain)   
-    _, slmc_autocorr = calc_autocorr(slmc_chain)    
+    _, slmc_autocorr = calc_autocorr(slmc_chain)
+
+    if iterated == True:
+
+        # Iterate towards the target temperature
+        temps = np.geomspace(T_start,T,iterations)
+        for temp in temps[1:]:
+
+            print("Training at {}".format(temp))
+
+            # Drop temperature towards target temperature
+            beta = 1/(k_b * temp)
+            kwargs = {'E0':E0, 'J1':J1} #arguments for h_eff in slmc class
+
+            # define our wolff updater withe the learned paramaters
+            slmc = SLMCUpdater(J1, beta, hamiltonian, h_eff, **kwargs)
+
+            initial_state = np.random.randint(0, 2, (size,size)) #initialize state from 0 to 1
+            initial_state[initial_state==0] = -1 #replace 0s with -1s
+
+            #markov chain of generated states
+            iterated_chain = []
+            iterated_chain.append(initial_state)
+            E_alphas = []
+            C_alphas = []
+            E_alphas.append(hamiltonian(initial_state))
+            C_alphas.append(spin_correlation(initial_state))
+
+            start_time = time.time()
+            for n in range(chain_length):
+                state = np.copy(iterated_chain[n])
+
+                #perform local update
+                state = slmc.update(state)
+            
+                #add state to chain
+                iterated_chain.append(state)
+
+            E_alphas.append(hamiltonian(state))
+            C_alphas.append(spin_correlation(state))
+
+            # Learn new effective hamiltonian
+            #convert to np arrays
+            E_alphas = np.reshape(np.array(E_alphas) , (len(E_alphas),1))
+            C_alphas = np.reshape(np.array(C_alphas) , (len(C_alphas),1))
+
+            lg = lm.LinearRegression().fit(C_alphas,E_alphas)
+            J1 = -lg.coef_[0,0]
+            E0 = lg.intercept_[0]
     
-    return local_autocorr, wolff_autocorr, slmc_autocorr
-
-
-
-if mode==0: #calculate and output autocorrelation    
-    local_autocorr, wolff_autocorr, slmc_autocorr = calc_mag(T)
+        _, iterated_autocorr = calc_autocorr(iterated_chain)
     
-    output_array=np.array([range(len(local_autocorr)),local_autocorr,wolff_autocorr,slmc_autocorr])
-    np.savetxt('autocorrelation_compare'+str(T)+'_'+str(size)+'.csv', output_array, delimiter=',')
+        return local_autocorr, wolff_autocorr, slmc_autocorr, iterated_autocorr
+
+    else:
+        return local_autocorr, wolff_autocorr, slmc_autocorr
+
+
+
+if mode==0: #calculate and output autocorrelation
+    if iterated:    
+        local_autocorr, wolff_autocorr, slmc_autocorr, iterated_autocorr = calc_mag(T)
+    
+        output_array=np.array([range(len(local_autocorr)),local_autocorr,wolff_autocorr,slmc_autocorr,iterated_autocorr])
+        np.savetxt('autocorrelation_compare'+str(T)+'_'+str(size)+'.csv', output_array, delimiter=',')
+
+    else:
+        local_autocorr, wolff_autocorr, slmc_autocorr = calc_mag(T)
+    
+        output_array=np.array([range(len(local_autocorr)),local_autocorr,wolff_autocorr,slmc_autocorr])
+        np.savetxt('autocorrelation_compare'+str(T)+'_'+str(size)+'.csv', output_array, delimiter=',')
     
 else: #plot autocorrelation
+    iterated_autocorr = None
     #read in data
     in_data = np.genfromtxt('autocorrelation_compare'+str(T)+'_'+str(size)+'.csv', delimiter=',')
     local_autocorr = in_data[1]
     wolff_autocorr = in_data[2]
     slmc_autocorr = in_data[3]
+    if iterated:
+        iterated_autocorr = in_data[4]
     
     #try to read in additional data (if available)
     try:
@@ -234,12 +299,16 @@ else: #plot autocorrelation
     local_autocorr /= max(local_autocorr)
     wolff_autocorr /= max(wolff_autocorr)
     slmc_autocorr /= max(slmc_autocorr)
-    
+
     #truncate to specified length
     max_dt_plot=500
     local_autocorr = local_autocorr[:max_dt_plot]
     wolff_autocorr = wolff_autocorr[:max_dt_plot]
     slmc_autocorr = slmc_autocorr[:max_dt_plot]
+
+    if iterated:
+        iterated_autocorr /= max(iterated_autocorr)
+        iterated_autocorr = iterated_autocorr[:max_dt_plot]
     
     
     ##perform autocorrelation fits
@@ -253,9 +322,16 @@ else: #plot autocorrelation
     p1,=plt.plot(range(len(local_autocorr)), local_autocorr, colors[0])
     p2,=plt.plot(range(len(wolff_autocorr)), wolff_autocorr, colors[1])
     p3,=plt.plot(range(len(slmc_autocorr)), slmc_autocorr, colors[2])
-    
-    #format plot and label
-    plt.legend([p1,p2,p3], ['local','wolff','slmc'])
+
+    if iterated:
+        colors.append("r")
+        p4,=plt.plot(range(len(iterated_autocorr)), iterated_autocorr, colors[3])
+        #format plot and label
+        plt.legend([p1,p2,p3,p4], ['local','wolff','slmc',"iterated slmc"])
+    else:
+        plt.legend([p1,p2,p3], ['local','wolff','slmc'])
+
+
     plt.xlabel(r'$dt$', fontsize=16)
     plt.ylabel(r'$\langle M(t)M(t+dt) \rangle - \langle M \rangle ^2$', fontsize=16)
     
