@@ -1,0 +1,9 @@
+{"J factor":1.0e-4,
+    "K factor":0.2e-4,
+    "size": 15,
+    "chain length":2000,
+    "T start":2.493,
+    "T end":6,
+    "burn in":1000,
+    "KL plot":true
+}
